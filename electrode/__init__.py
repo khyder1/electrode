@@ -5,6 +5,8 @@ Electrode2
 import abc
 from typing import Callable, Dict, Hashable
 
+from brian2 import NeuronGroup, SpikeMonitor, Network, StateMonitor, ms, mV, run
+
 import networkx as nx
 
 __version__ = "0.2.0"
@@ -17,6 +19,35 @@ class Neuron(abc.ABC):
 
     def get_membrane_potential(self):
         ...
+
+
+class Brian2Neuron(Neuron):
+    def __init__(
+        self,
+        model: str = "dv/dt = -v/(10*ms) : volt",
+        threshold: str = "v > -50*mV",
+        reset="v = -70*mV",
+        refractory: str = "5*ms",
+    ) -> None:
+        self._fire_callbacks = []
+        self._time_step_size_ms = 0.12
+
+        self._group = NeuronGroup(
+            1, model, threshold=threshold, reset=reset, refractory=refractory
+        )
+        self._monitor = StateMonitor(
+            self._group, ("v",), record=[0]
+        )
+        self._net = Network(self._group, self._monitor)
+
+    def add_fire_hook(self, cb: Callable) -> None:
+        self._fire_callbacks.append(cb)
+
+    def step(self):
+        self._net.run(self._time_step_size_ms * ms)
+
+    def get_membrane_potential(self):
+        return 1000*float(self._monitor.v[0][-1])
 
 
 class LIAFNeuron(Neuron):
