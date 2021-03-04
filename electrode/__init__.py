@@ -33,7 +33,7 @@ class Brian2Neuron(Neuron):
         self._time_step_size_ms = 0.12
 
         self._group = NeuronGroup(
-            1, model, threshold=threshold, reset=reset, refractory=refractory
+            1, model=model, method = 'exact', threshold=threshold, reset=reset, refractory=refractory
         )
         self._monitor = StateMonitor(
             self._group, ("v",), record=[0]
@@ -178,6 +178,9 @@ class Brain:
 
     def neurons(self) -> Dict[Hashable, Neuron]:
         return {name: n["neuron"] for name, n in self._graph.nodes(data=True)}
+    
+    def edges(self) -> Dict[Hashable, Neuron]:
+        return {u:v for name[u],name[v] in self._graph.edges(data=True)}
 
     def get_neuron(self, name: Hashable) -> Neuron:
         return self.neurons()[name]
